@@ -52,8 +52,18 @@ const ModelTrain: ModelTrainType = async (data: ImageDataset, model: UniModel, a
         const xs = tf.stack(dataBatch.map((ele) => ele.data));
         const ys = tf.stack(dataBatch.map((ele) => ele.label));
         const evaluateRes = await trainModel.evaluate(xs, ys);
-        loss += Number(evaluateRes[0].numpy());
-        accuracy += Number(evaluateRes[1].numpy());
+        // tensorflow is converting tensor to numpy automatically
+        // reference: https://github.com/tensorflow/tensorflow/blob/v2.3.0/tensorflow/python/keras/engine/training.py#L1385
+        if (typeof evaluateRes[0] === 'number') {
+          loss += evaluateRes[0];  
+        } else {
+          loss += Number(evaluateRes[0].numpy());
+        }
+        if (typeof evaluateRes[1] === 'number') {
+          accuracy += evaluateRes[1];
+        } else {
+          accuracy += Number(evaluateRes[1].numpy());
+        }
       }
       loss /= valBatchesPerEpoch;
       accuracy /= valBatchesPerEpoch;
