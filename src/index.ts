@@ -50,6 +50,8 @@ const ModelTrain: ModelTrainType = async (data: ImageDataset, model: UniModel, a
         const dataBatch = await validationLoader.nextBatch(batchSize);
         const evaluateRes = evaluate(dataBatch.map((ele) => ele.data), dataBatch.map((ele) => ele.label), trainModel)
         
+        // the value returned by evaluate can be either tensor or number
+        // if it's tensor, we need to call tensor.numpy() to get numbers
         if (typeof evaluateRes[0] === 'number') {
           loss += evaluateRes[0];  
         } else {
