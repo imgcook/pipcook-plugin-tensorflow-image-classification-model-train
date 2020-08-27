@@ -24,26 +24,30 @@ tf.compat.v1.InteractiveSession(boa.kwargs({
  * @param optimizer : need to specify optimizer
  */
 const ModelTrain: ModelTrainType = async (data: ImageDataset, model: UniModel, args: ModelTrainArgsType): Promise<UniModel> => {
-  try {
-    const {
-      epochs = 10,
-      batchSize = 16,
-      modelPath
-    } = args;
+  const {
+    epochs = 10,
+    batchSize = 16,
+    modelPath
+  } = args;
 
-    const { trainLoader, validationLoader } = data;
-    const count = await trainLoader.len();
+  const { trainLoader, validationLoader } = data;
+  const count = await trainLoader.len();
+  let valBatchesPerEpoch: number;
+  if (validationLoader) {
     const valCount = await validationLoader.len();
-    const batchesPerEpoch = Math.floor(count / batchSize);
-    const valBatchesPerEpoch = Math.floor(valCount / batchSize);
-    const trainModel = model.model;
+    valBatchesPerEpoch = Math.floor(valCount / batchSize);
+  }
+  
+  const batchesPerEpoch = Math.floor(count / batchSize);
+  const trainModel = model.model;
 
-    for (let i = 0; i < epochs; i++) {
-      console.log(`Epoch ${i}/${epochs} start`);
-      for (let j = 0; j < batchesPerEpoch; j++) {
-        const dataBatch = await data.trainLoader.nextBatch(batchSize);
-        train(dataBatch.map((ele) => ele.data), dataBatch.map((ele) => ele.label), trainModel, j, batchesPerEpoch)
-      }
+  for (let i = 0; i < epochs; i++) {
+    console.log(`Epoch ${i}/${epochs} start`);
+    for (let j = 0; j < batchesPerEpoch; j++) {
+      const dataBatch = await data.trainLoader.nextBatch(batchSize);
+      train(dataBatch.map((ele) => ele.data), dataBatch.map((ele) => ele.label), trainModel, j, batchesPerEpoch)
+    }
+    if (validationLoader) {
       let loss = 0;
       let accuracy = 0;
       for (let j = 0; j < valBatchesPerEpoch; j++) {
@@ -67,20 +71,17 @@ const ModelTrain: ModelTrainType = async (data: ImageDataset, model: UniModel, a
       accuracy /= valBatchesPerEpoch;
       console.log(`Validation Result ${i}/${epochs} result --- loss: ${loss} accuracy: ${accuracy}`);
     }
-
-    await fs.ensureDir(modelPath);
-    await trainModel.save_weights(path.join(modelPath, 'weights.h5'));
-    await trainModel.save(path.join(modelPath, 'model.h5'));
-
-    const result: UniModel = {
-      ...model,
-      model: trainModel
-    };
-    return result;
-  } catch (err) {
-    console.error('occurs an error on model trainer', err);
-    throw err;
   }
+
+  await fs.ensureDir(modelPath);
+  await trainModel.save_weights(path.join(modelPath, 'weights.h5'));
+  await trainModel.save(path.join(modelPath, 'model.h5'));
+
+  const result: UniModel = {
+    ...model,
+    model: trainModel
+  };
+  return result;
 };
 
 export default ModelTrain;
