@@ -31,7 +31,7 @@ const ModelTrain: ModelTrainType = async (data: ImageDataset, model: UniModel, a
   } = args;
 
   // create tf summary writter
-  const trainSummaryWriter = tf.summary.create_file_writter(path.join(modelPath, 'summary'));
+  const trainSummaryWriter = tf.summary.create_file_writer(path.join(modelPath, 'summary'));
 
   const { trainLoader, validationLoader } = data;
   const count = await trainLoader.len();
