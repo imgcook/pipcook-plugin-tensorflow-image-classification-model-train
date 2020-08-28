@@ -30,6 +30,9 @@ const ModelTrain: ModelTrainType = async (data: ImageDataset, model: UniModel, a
     modelPath
   } = args;
 
+  // create tf summary writter
+  const trainSummaryWriter = tf.summary.create_file_writter(path.join(modelPath, 'summary'));
+
   const { trainLoader, validationLoader } = data;
   const count = await trainLoader.len();
   let valBatchesPerEpoch: number;
@@ -41,11 +44,12 @@ const ModelTrain: ModelTrainType = async (data: ImageDataset, model: UniModel, a
   const batchesPerEpoch = Math.floor(count / batchSize);
   const trainModel = model.model;
 
+  let iterations = 0;
   for (let i = 0; i < epochs; i++) {
     console.log(`Epoch ${i}/${epochs} start`);
     for (let j = 0; j < batchesPerEpoch; j++) {
       const dataBatch = await data.trainLoader.nextBatch(batchSize);
-      train(dataBatch.map((ele) => ele.data), dataBatch.map((ele) => ele.label), trainModel, j, batchesPerEpoch)
+      train(dataBatch.map((ele) => ele.data), dataBatch.map((ele) => ele.label), trainModel, j, batchesPerEpoch, trainSummaryWriter, iterations++)
     }
     if (validationLoader) {
       let loss = 0;
